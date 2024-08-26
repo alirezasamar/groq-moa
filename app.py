@@ -1,14 +1,31 @@
 import copy
 import json
+import os
 from typing import Iterable, Dict, Any
 
 import streamlit as st
 from streamlit_ace import st_ace
 from groq import Groq
+from dotenv import load_dotenv
 
 from moa.agent import MOAgent
 from moa.agent.moa import ResponseChunk, MOAgentConfig
 from moa.agent.prompts import SYSTEM_PROMPT, REFERENCE_SYSTEM_PROMPT
+
+# Load .env file if it exists (for local development)
+env_loaded = False
+if os.path.exists('.env'):
+    load_dotenv()
+    env_loaded = True
+
+# Check whether to use environment variables or Streamlit secrets
+if env_loaded:
+    groq_api_key = os.getenv("GROQ_API_KEY")
+else:
+    groq_api_key = st.secrets["GROQ_API_KEY"]
+
+# Initialize the Groq instance with API credentials
+groq_client = Groq(api_key=groq_api_key)
 
 # Default configuration
 default_main_agent_config = {
@@ -143,7 +160,7 @@ st.set_page_config(
     layout="wide"
 )
 
-valid_model_names = [model.id for model in Groq().models.list().data if not (model.id.startswith("whisper") or model.id.startswith("llama-guard"))]
+valid_model_names = [model.id for model in groq_client.models.list().data if not (model.id.startswith("whisper") or model.id.startswith("llama-guard"))]
 
 st.markdown("<a href='https://groq.com'><img src='app/static/banner.png' width='500'></a>", unsafe_allow_html=True)
 st.write("---")
